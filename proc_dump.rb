@@ -20,7 +20,7 @@ class Proccess
 	end	
 	
 	def to_s
-		"#{@number} \t #{@name} \t #{@uid} \t #{@user}"
+		"#{@number} \t #{@uid} \t #{@user} \t #{@name}"
 	end
 end
 
@@ -30,10 +30,21 @@ def parse_uid (str)
   return split[1]
 end
 
-odptions={}
-optparse = OptionParser.new do|opts|
-  opts.banner="Usage: pd [-arg]"
+options={:uid=>nil, :user=> nil, :pid=>nil}
+parser = OptionParser.new do|opts|
+  opts.banner="Usage: ./proc_dump.rb [options]"
+  
+  opts.on( '-h', '--help', 'Display this screen' ) do
+     puts opts
+     exit
+  end
+
+  opts.on('-a', '--all', 'Display all processes from all users' ) do
+    puts "all"
+  end
 end
+
+parser.parse!
 ##  Define procs array
 procs=[]
 
