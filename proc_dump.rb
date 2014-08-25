@@ -1,8 +1,10 @@
 #!/usr/bin/ruby
 
+require 'etc'
+
 class Proccess
   ##	Needed for accessing class vars (Reading/Writing)
-	attr_accessor :number, :name, :command	
+	attr_accessor :number, :name, :command, :uid, :user	
 
 	##	Think created as private
  	## 	For read only/write only attr_reader/attr_writer
@@ -16,14 +18,21 @@ class Proccess
 	end	
 	
 	def to_s
-		"#{@number} \t #{@name} \t"
+		"#{@number} \t #{@name} \t #{@uid} \t #{@user}"
 	end
 end
 
-## Define procs array
+def parse_uid (str)
+  split = str.split(' ')
+  ##  UID should be at first index
+  return split[1]
+end
+
+
+##  Define procs array
 procs=[]
 
-## For each file in /proc folder filter for pid's
+##  For each file in /proc folder filter for pid's
 Dir.foreach("/proc/") do |file|   
   if /\d+/.match("#{file}")   ##  Regexp for 1 or more digits
     proc = Proccess.new(file)
@@ -33,19 +42,27 @@ end
 
 p procs
 
-procs.each do |p|
-  comm = File.open("#{p.path}/comm", "r")
+procs.each do |prc|
+  comm = File.open("#{prc.path}/comm", "r")
   comm.each_line do |line|      ##  File should only contain one line
-    p.name = line
+    prc.name = line.chomp
   end
   comm.close
 
-  cmdline = File.open("#{p.path}/cmdline", "r")
+  cmdline = File.open("#{prc.path}/cmdline", "r")
   cmdline.each_line do |line|   ##  File should only contain one line
-    p.command = line
+    prc.command = line.chomp
   end
   cmdline.close
-  puts p
-end
 
+  status = File.open("#{prc.path}/status", "r")
+  status.each_line do |line|
+    if /Uid.*/.match("#{line}")
+      prc.uid=parse_uid(line)
+      prc.user=Etc.getpwuid(prc.uid.to_i).name
+    end
+  end
+
+  puts prc  
+end
 
