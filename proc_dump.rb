@@ -1,6 +1,7 @@
 #!/usr/bin/ruby
 
-require 'etc'
+require 'etc'       ##  Needed for getpwuid
+require 'optparse'  ##  Needed for parsing CLAs
 
 class Proccess
   ##	Needed for accessing class vars (Reading/Writing)
@@ -12,9 +13,10 @@ class Proccess
 	def initialize (number)	
 		@number=number
 	end
-  
-	def path										##	Example of a "virtual instance variable"
-		"/proc/#{@number}"				##	Think database derived value
+ 
+ 	##	Example of a "virtual instance variable" 
+  def path
+		"/proc/#{@number}"				
 	end	
 	
 	def to_s
@@ -28,7 +30,10 @@ def parse_uid (str)
   return split[1]
 end
 
-
+odptions={}
+optparse = OptionParser.new do|opts|
+  opts.banner="Usage: pd [-arg]"
+end
 ##  Define procs array
 procs=[]
 
@@ -40,7 +45,7 @@ Dir.foreach("/proc/") do |file|
   end
 end
 
-p procs
+#p procs
 
 procs.each do |prc|
   comm = File.open("#{prc.path}/comm", "r")
@@ -59,7 +64,11 @@ procs.each do |prc|
   status.each_line do |line|
     if /Uid.*/.match("#{line}")
       prc.uid=parse_uid(line)
-      prc.user=Etc.getpwuid(prc.uid.to_i).name
+      begin 
+      prc.user=Etc.getpwuid(prc.uid.to_i).name 
+      rescue ArgumentError    ##  Some uids dont have pw entries
+        prc.user=prc.uid
+      end
     end
   end
 
